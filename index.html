@@ -391,6 +391,178 @@
             if(audio.paused) { audio.play(); pBtn.innerText = "PAUSE"; }
             else { audio.pause(); pBtn.innerText = "PLAY"; }
         };
-    </script>
+    /// --- FAIL-SAFE: Force Background Video to Start ---
+const bgVideo = document.getElementById('bg-video');
+
+// This function forces the video to play if the browser blocked it
+function forceStartVideo() {
+    bgVideo.play().then(() => {
+        console.log("Video background started successfully!");
+    }).catch(err => {
+        console.log("Video still blocked. It will start on your first click.");
+    });
+}
+
+// Start video on first interaction (needed for many mobile apps)
+window.addEventListener('click', () => {
+    forceStartVideo();
+}, { once: true });
+
+// --- Core App Variables ---
+let ticker;
+let timeLeft = 0;
+let mode = 'pomo'; 
+let active = false;
+let onBreak = false;
+let cyclesLeft = 0;
+let task = "STUDY";
+
+const audio = new Audio();
+audio.loop = true;
+
+// --- Clock and Date Engine ---
+function clockUpdate() {
+    const d = new Date();
+    document.getElementById('clock').innerText = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+    document.getElementById('date').innerText = d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
+}
+setInterval(clockUpdate, 1000);
+clockUpdate();
+
+// --- Formatting Helper ---
+function fmt(s) {
+    const h = Math.floor(s/3600).toString().padStart(2,'0');
+    const m = Math.floor((s%3600)/60).toString().padStart(2,'0');
+    const sc = (s%60).toString().padStart(2,'0');
+    return `${h}:${m}:${sc}`;
+}
+
+// --- Mode Switching ---
+document.querySelectorAll('.mode-opt').forEach(opt => {
+    opt.onclick = (e) => {
+        e.stopPropagation();
+        stopTimer();
+        document.querySelectorAll('.mode-opt').forEach(x => x.classList.remove('active'));
+        opt.classList.add('active');
+        if(opt.id === 'm-pomo') mode = 'pomo';
+        if(opt.id === 'm-stop') mode = 'stop';
+        if(opt.id === 'm-time') mode = 'time';
+        timeLeft = 0;
+        document.getElementById('timerOut').innerText = "00:00:00";
+    }
+});
+
+// --- Interaction Logic ---
+document.getElementById('mainDoor').onclick = () => {
+    if(!active && (mode === 'pomo' || mode === 'time') && timeLeft === 0) {
+        openSettings();
+    } else {
+        toggleTimer();
+    }
+};
+
+function openSettings() {
+    document.getElementById('settingsMenu').style.display = 'flex';
+    document.getElementById('taskField').style.display = mode === 'pomo' ? 'block' : 'none';
+    document.getElementById('cycleField').style.display = mode === 'pomo' ? 'block' : 'none';
+    document.getElementById('set-title').innerText = mode === 'pomo' ? "Pomodoro Setup" : "Timer Setup";
+}
+
+function closeSettings() { document.getElementById('settingsMenu').style.display = 'none'; }
+
+function startLogic() {
+    task = document.getElementById('taskName').value.toUpperCase() || "STUDY";
+    timeLeft = document.getElementById('workIn').value * 60;
+    cyclesLeft = document.getElementById('cycleIn').value;
+    onBreak = false;
+    closeSettings();
+    document.getElementById('timerOut').innerText = fmt(timeLeft);
+    toggleTimer();
+}
+
+function toggleTimer() {
+    if(active) {
+        clearInterval(ticker);
+        document.getElementById('statusLabel').innerText = "PAUSED";
+    } else {
+        ticker = setInterval(doTick, 1000);
+        updateLabel();
+    }
+    active = !active;
+}
+
+function stopTimer() {
+    clearInterval(ticker);
+    active = false;
+    document.getElementById('statusLabel').innerText = "READY";
+}
+
+function doTick() {
+    if(mode === 'stop') {
+        timeLeft++;
+    } else {
+        if(timeLeft <= 0) {
+            handleFinish();
+        } else {
+            timeLeft--;
+        }
+    }
+    document.getElementById('timerOut').innerText = fmt(timeLeft);
+}
+
+function handleFinish() {
+    if(mode === 'pomo') {
+        if(!onBreak) {
+            onBreak = true;
+            timeLeft = document.getElementById('breakIn').value * 60;
+        } else {
+            cyclesLeft--;
+            if(cyclesLeft > 0) {
+                onBreak = false;
+                timeLeft = document.getElementById('workIn').value * 60;
+            } else {
+                stopTimer();
+                alert("Session Complete!");
+                return;
+            }
+        }
+        updateLabel();
+    } else {
+        stopTimer();
+        alert("Time is up!");
+    }
+}
+
+function updateLabel() {
+    const lbl = document.getElementById('statusLabel');
+    if(mode === 'stop') lbl.innerText = "STOPWATCH";
+    else if(mode === 'time') lbl.innerText = "TIMER";
+    else lbl.innerText = onBreak ? "BREAK" : task;
+}
+
+// --- Music Engine ---
+const mBtn = document.getElementById('musicBtn');
+const mIn = document.getElementById('musicInput');
+const pBtn = document.getElementById('playPauseText');
+
+mBtn.onclick = () => mIn.click();
+mIn.onchange = (e) => {
+    const file = e.target.files[0];
+    if(file) {
+        if(audio.src) URL.revokeObjectURL(audio.src);
+        audio.src = URL.createObjectURL(file);
+        audio.loop = true;
+        audio.play();
+        pBtn.style.display = 'block';
+        pBtn.innerText = "PAUSE";
+    }
+};
+
+pBtn.onclick = (e) => {
+    e.stopPropagation();
+    if(audio.paused) { audio.play(); pBtn.innerText = "PAUSE"; }
+    else { audio.pause(); pBtn.innerText = "PLAY"; }
+};
+
 </body>
 </html>
