@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Clover Productivity App</title>
+    <title>Clover Productivity Hub</title>
     <style>
         :root {
-            --glass: rgba(0, 20, 0, 0.5);
+            --glass-core: rgba(0, 15, 0, 0.4);
             --accent: #a8e6cf;
-            --border: rgba(255, 255, 255, 0.15);
+            --white-soft: rgba(255, 255, 255, 0.8);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -17,369 +17,141 @@
             margin: 0; padding: 0;
             width: 100%; height: 100%;
             overflow: hidden;
-            font-family: 'Segoe UI', sans-serif;
-            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #000;
+            color: white;
         }
 
-        /* Video Background Logic */
+        /* --- VIDEO BACKGROUND --- */
         #bg-video {
             position: fixed;
             top: 50%; left: 50%;
             min-width: 100%; min-height: 100%;
             width: auto; height: auto;
-            z-index: -2;
+            z-index: -10;
             transform: translate(-50%, -50%);
             object-fit: cover;
             pointer-events: none;
         }
 
-        .overlay-dim {
+        /* Subtle dark overlay to make text pop */
+        .scrim {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,0.2);
-            z-index: -1;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: -5;
         }
 
-        /* Music Icon (Top Circle) */
-        .music-system {
+        /* --- MUSIC ICON (TOP CENTER/RIGHT) --- */
+        .music-node {
             position: absolute;
-            top: 30px; right: 30px;
-            display: flex; flex-direction: column; align-items: center;
-            z-index: 10;
+            top: 25px; right: 25px;
+            z-index: 50;
+            text-align: center;
         }
 
-        .music-btn {
-            width: 55px; height: 55px;
+        .music-circle {
+            width: 50px; height: 50px;
             border-radius: 50%;
-            background: var(--glass);
-            border: 2px solid var(--accent);
-            display: flex; justify-content: center; align-items: center;
+            background: var(--glass-core);
+            border: 1.5px solid var(--accent);
+            display: flex; align-items: center; justify-content: center;
             cursor: pointer; font-size: 20px;
-            box-shadow: 0 0 15px rgba(168, 230, 207, 0.3);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
         }
 
-        #playPauseText {
+        #musicToggleBtn {
+            display: none;
             margin-top: 8px;
             font-size: 10px;
             letter-spacing: 2px;
-            background: var(--glass);
-            padding: 2px 8px;
-            border-radius: 10px;
-            display: none;
+            color: var(--accent);
+            cursor: pointer;
         }
 
-        /* Main Display (The Door) */
-        .main-door {
+        /* --- MAIN "DOOR" UI --- */
+        .door-container {
             position: absolute;
-            top: 15%; left: 50%;
+            top: 10%; left: 50%;
             transform: translateX(-50%);
-            width: 90%; max-width: 750px;
+            width: 90%; max-width: 800px;
             height: 260px;
-            background: var(--glass);
-            border: 2px solid var(--border);
-            border-radius: 24px;
-            backdrop-filter: blur(10px);
+            background: var(--glass-core);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 25px;
+            backdrop-filter: blur(12px);
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             cursor: pointer;
-            transition: border-color 0.3s;
         }
 
-        .main-door:hover { border-color: var(--accent); }
-
-        .mode-selector {
+        .mode-nav {
             position: absolute;
-            top: 20px; right: 25px;
+            top: 15px; right: 20px;
             display: flex; gap: 15px;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
-        .mode-opt { opacity: 0.4; transition: 0.3s; }
-        .mode-opt.active { opacity: 1; color: var(--accent); font-weight: bold; }
+        .mode-btn {
+            font-size: 11px; text-transform: uppercase;
+            letter-spacing: 1.5px; opacity: 0.4;
+            transition: 0.3s;
+        }
 
-        .digits {
-            font-size: clamp(4rem, 15vw, 6.5rem);
-            font-weight: 700;
+        .mode-btn.active { opacity: 1; color: var(--accent); font-weight: bold; }
+
+        .time-display {
+            font-size: clamp(4rem, 18vw, 7.5rem);
+            font-weight: 800;
             letter-spacing: -2px;
             font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
-        .label-text {
-            position: absolute;
-            bottom: 20px;
-            font-size: 14px;
-            letter-spacing: 5px;
-            color: var(--accent);
-            text-transform: uppercase;
+        .status-txt {
+            position: absolute; bottom: 15px;
+            letter-spacing: 6px; font-size: 13px;
+            color: var(--accent); text-transform: uppercase;
         }
 
-        /* Bottom Left Box */
-        .date-time-container {
+        /* --- INFO BOX (BOTTOM LEFT) --- */
+        .info-widget {
             position: absolute;
             bottom: 40px; left: 30px;
-            padding: 20px;
-            background: var(--glass);
-            border: 1px solid var(--border);
+            padding: 15px 25px;
+            background: var(--glass-core);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: 15px;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
         }
 
-        #clock { font-size: 32px; font-weight: bold; display: block; }
-        #date { font-size: 14px; opacity: 0.7; margin-top: 5px; display: block; }
+        #clock-view { font-size: 28px; font-weight: 600; display: block; }
+        #date-view { font-size: 13px; opacity: 0.7; margin-top: 4px; display: block; }
 
-        /* Settings Popups */
-        .modal {
-            position: fixed;
-            top: 0; left: 0;
+        /* --- POPUP SETTINGS --- */
+        .modal-blur {
+            position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0, 10, 0, 0.9);
-            z-index: 100;
-            display: none;
+            background: rgba(0, 10, 0, 0.85);
+            z-index: 100; display: none;
             justify-content: center; align-items: center;
         }
 
-        .modal-content {
-            background: #0a140a;
-            border: 1px solid var(--accent);
-            padding: 30px;
-            border-radius: 20px;
+        .modal-box {
+            background: #081208;
+            border: 1.5px solid var(--accent);
+            padding: 30px; border-radius: 20px;
             width: 85%; max-width: 380px;
         }
 
-        .modal-content h2 { margin: 0 0 20px 0; color: var(--accent); font-size: 20px; }
-
-        .field { margin-bottom: 15px; }
-        .field label { display: block; font-size: 12px; opacity: 0.6; margin-bottom: 5px; }
-        .field input {
-            width: 100%; padding: 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border);
-            color: white; border-radius: 8px;
+        .input-row { margin-bottom: 15px; }
+        .input-row label { display: block; font-size: 11px; margin-bottom: 5px; opacity: 0.6; }
+        .input-row input {
+            width: 100%; padding: 12px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05); color: white;
         }
 
-        .actions { display: flex; gap: 10px; margin-top: 25px; }
-        .actions button {
-            flex: 1; padding: 12px; border-radius: 8px; border: none;
-            font-weight: bold; cursor: pointer;
-        }
-        .btn-go { background: var(--accent); color: #002; }
-        .btn-off { background: transparent; color: white; border: 1px solid white; }
-    </style>
-</head>
-<body>
-
-    <video autoplay muted loop playsinline id="bg-video">
-        <source src="endlessrain.mp4" type="video/mp4">
-    </video>
-    <div class="overlay-dim"></div>
-
-    <div class="app-container">
-        <div class="music-system">
-            <div class="music-btn" id="musicBtn">🎵</div>
-            <div id="playPauseText">PLAY</div>
-            <input type="file" id="musicInput" accept="audio/*" hidden>
-        </div>
-
-        <div class="main-door" id="mainDoor">
-            <div class="mode-selector">
-                <span class="mode-opt active" id="m-pomo">Pomodoro</span>
-                <span class="mode-opt" id="m-stop">Stopwatch</span>
-                <span class="mode-opt" id="m-time">Timer</span>
-            </div>
-            <div class="digits" id="timerOut">00:00:00</div>
-            <div class="label-text" id="statusLabel">READY</div>
-        </div>
-
-        <div class="date-time-container">
-            <span id="clock">00:00</span>
-            <span id="date">...</span>
-        </div>
-    </div>
-
-    <div class="modal" id="settingsMenu">
-        <div class="modal-content">
-            <h2 id="set-title">Pomodoro Settings</h2>
-            <div class="field" id="taskField">
-                <label>WORK TASK NAME</label>
-                <input type="text" id="taskName" placeholder="Study, Recall, etc.">
-            </div>
-            <div class="field">
-                <label>WORK MINUTES</label>
-                <input type="number" id="workIn" value="65">
-            </div>
-            <div class="field">
-                <label>BREAK MINUTES</label>
-                <input type="number" id="breakIn" value="10">
-            </div>
-            <div class="field" id="cycleField">
-                <label>TOTAL CYCLES</label>
-                <input type="number" id="cycleIn" value="7">
-            </div>
-            <div class="actions">
-                <button class="btn-off" onclick="closeSettings()">CANCEL</button>
-                <button class="btn-go" onclick="startLogic()">START</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let ticker;
-        let timeLeft = 0;
-        let mode = 'pomo'; 
-        let active = false;
-        let onBreak = false;
-        let cyclesLeft = 0;
-        let task = "WORK";
-
-        const audio = new Audio();
-        audio.loop = true;
-
-        // Clock logic
-        function clockUpdate() {
-            const d = new Date();
-            document.getElementById('clock').innerText = d.toLocaleTimeString([], {hour12:false});
-            document.getElementById('date').innerText = d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
-        }
-        setInterval(clockUpdate, 1000);
-        clockUpdate();
-
-        // Time Formatting
-        function fmt(s) {
-            const h = Math.floor(s/3600).toString().padStart(2,'0');
-            const m = Math.floor((s%3600)/60).toString().padStart(2,'0');
-            const sc = (s%60).toString().padStart(2,'0');
-            return `${h}:${m}:${sc}`;
-        }
-
-        // Mode Switching
-        document.querySelectorAll('.mode-opt').forEach(opt => {
-            opt.onclick = (e) => {
-                e.stopPropagation();
-                stopTimer();
-                document.querySelectorAll('.mode-opt').forEach(x => x.classList.remove('active'));
-                opt.classList.add('active');
-                if(opt.id === 'm-pomo') mode = 'pomo';
-                if(opt.id === 'm-stop') mode = 'stop';
-                if(opt.id === 'm-time') mode = 'time';
-                timeLeft = 0;
-                document.getElementById('timerOut').innerText = "00:00:00";
-            }
-        });
-
-        // Main Door Interaction
-        document.getElementById('mainDoor').onclick = () => {
-            if(!active && (mode === 'pomo' || mode === 'time')) {
-                openSettings();
-            } else {
-                toggleTimer();
-            }
-        };
-
-        function openSettings() {
-            document.getElementById('settingsMenu').style.display = 'flex';
-            document.getElementById('taskField').style.display = mode === 'pomo' ? 'block' : 'none';
-            document.getElementById('cycleField').style.display = mode === 'pomo' ? 'block' : 'none';
-            document.getElementById('set-title').innerText = mode === 'pomo' ? "Pomodoro Setup" : "Timer Setup";
-        }
-
-        function closeSettings() { document.getElementById('settingsMenu').style.display = 'none'; }
-
-        function startLogic() {
-            task = document.getElementById('taskName').value.toUpperCase() || "WORK";
-            timeLeft = document.getElementById('workIn').value * 60;
-            cyclesLeft = document.getElementById('cycleIn').value;
-            onBreak = false;
-            closeSettings();
-            document.getElementById('timerOut').innerText = fmt(timeLeft);
-            toggleTimer();
-        }
-
-        function toggleTimer() {
-            if(active) {
-                clearInterval(ticker);
-                document.getElementById('statusLabel').innerText = "PAUSED";
-            } else {
-                ticker = setInterval(doTick, 1000);
-                updateLabel();
-            }
-            active = !active;
-        }
-
-        function stopTimer() {
-            clearInterval(ticker);
-            active = false;
-            document.getElementById('statusLabel').innerText = "READY";
-        }
-
-        function doTick() {
-            if(mode === 'stop') {
-                timeLeft++;
-            } else {
-                if(timeLeft <= 0) {
-                    handleFinish();
-                } else {
-                    timeLeft--;
-                }
-            }
-            document.getElementById('timerOut').innerText = fmt(timeLeft);
-        }
-
-        function handleFinish() {
-            if(mode === 'pomo') {
-                if(!onBreak) {
-                    onBreak = true;
-                    timeLeft = document.getElementById('breakIn').value * 60;
-                } else {
-                    cyclesLeft--;
-                    if(cyclesLeft > 0) {
-                        onBreak = false;
-                        timeLeft = document.getElementById('workIn').value * 60;
-                    } else {
-                        stopTimer();
-                        alert("Session Complete!");
-                        return;
-                    }
-                }
-                updateLabel();
-            } else {
-                stopTimer();
-                alert("Time is up!");
-            }
-        }
-
-        function updateLabel() {
-            const lbl = document.getElementById('statusLabel');
-            if(mode === 'stop') lbl.innerText = "STOPWATCH";
-            else if(mode === 'time') lbl.innerText = "TIMER";
-            else lbl.innerText = onBreak ? "BREAK" : task;
-        }
-
-        // Music System
-        const mBtn = document.getElementById('musicBtn');
-        const mIn = document.getElementById('musicInput');
-        const pBtn = document.getElementById('playPauseText');
-
-        mBtn.onclick = () => mIn.click();
-        mIn.onchange = (e) => {
-            const file = e.target.files[0];
-            if(file) {
-                audio.src = URL.createObjectURL(file);
-                audio.loop = true;
-                audio.play();
-                pBtn.style.display = 'block';
-                pBtn.innerText = "PAUSE";
-            }
-        };
-
-        pBtn.onclick = (e) => {
-            e.stopPropagation();
-            if(audio.paused) { audio.play(); pBtn.innerText = "PAUSE"; }
-            else { audio.pause(); pBtn.innerText = "PLAY"; }
-        };
-    </script>
-</body>
-</html>
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 12px; border-radius: 8
