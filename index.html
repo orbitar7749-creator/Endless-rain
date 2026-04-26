@@ -3,181 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Clover Productivity App</title>
+    <title>Clover Productivity Hub</title>
     <style>
         :root {
-            --glass: rgba(0, 15, 0, 0.5);
+            --glass: rgba(0, 25, 0, 0.6);
             --accent: #a8e6cf;
-            --border: rgba(255, 255, 255, 0.15);
+            --border: rgba(255, 255, 255, 0.2);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body, html {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            overflow: hidden;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background: #001100; color: white;
             font-family: 'Segoe UI', sans-serif;
-            color: white;
-            background: #000;
         }
 
-        /* Video Background Logic */
+        /* 1. BACKGROUND VIDEO ENGINE */
         #bg-video {
-            position: fixed;
-            top: 50%; left: 50%;
+            position: fixed; top: 50%; left: 50%;
             min-width: 100%; min-height: 100%;
-            width: auto; height: auto;
-            z-index: -2;
+            width: auto; height: auto; z-index: -2;
             transform: translate(-50%, -50%);
-            object-fit: cover;
-            pointer-events: none; /* Allows clicking UI elements on top */
+            object-fit: cover; pointer-events: none;
         }
 
-        .overlay-dim {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.1);
-            z-index: -1;
+        .fallback-dim {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.2); z-index: -1;
         }
 
-        /* Music Icon (Top Circle) */
-        .music-system {
-            position: absolute;
-            top: 30px; right: 30px;
-            display: flex; flex-direction: column; align-items: center;
-            z-index: 10;
+        /* 2. MUSIC ICON (Top Circle) */
+        .music-wrapper {
+            position: absolute; top: 30px; right: 30px;
+            display: flex; flex-direction: column; align-items: center; z-index: 10;
         }
 
         .music-btn {
-            width: 55px; height: 55px;
-            border-radius: 50%;
-            background: var(--glass);
-            border: 2px solid var(--accent);
+            width: 60px; height: 60px; border-radius: 50%;
+            background: var(--glass); border: 2px solid var(--accent);
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer; font-size: 20px;
-            box-shadow: 0 0 15px rgba(168, 230, 207, 0.3);
+            cursor: pointer; font-size: 24px; box-shadow: 0 0 15px rgba(168,230,207,0.4);
         }
 
-        #playPauseText {
-            margin-top: 8px;
-            font-size: 11px;
-            letter-spacing: 2px;
-            background: var(--glass);
-            padding: 4px 10px;
-            border-radius: 12px;
-            display: none;
-            cursor: pointer;
-            border: 1px solid var(--border);
+        #music-status {
+            margin-top: 8px; font-size: 10px; letter-spacing: 2px;
+            background: var(--glass); padding: 4px 10px; border-radius: 10px;
+            display: none; cursor: pointer; border: 1px solid var(--border);
         }
 
-        /* Main Display (The Door) */
+        /* 3. THE MAIN DOOR (Top Display) */
         .main-door {
-            position: absolute;
-            top: 15%; left: 50%;
-            transform: translateX(-50%);
-            width: 90%; max-width: 750px;
-            height: 260px;
-            background: var(--glass);
-            border: 2px solid var(--border);
-            border-radius: 24px;
-            backdrop-filter: blur(10px);
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 700px; height: 260px;
+            background: var(--glass); border: 2px solid var(--border);
+            border-radius: 25px; backdrop-filter: blur(12px);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; transition: 0.3s;
         }
 
-        .main-door:active { transform: translateX(-50%) scale(0.98); }
-
-        .mode-selector {
-            position: absolute;
-            top: 20px; right: 25px;
-            display: flex; gap: 15px;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .mode-tabs {
+            position: absolute; top: 20px; right: 25px; display: flex; gap: 15px;
         }
 
-        .mode-opt { opacity: 0.4; transition: 0.3s; cursor: pointer; }
-        .mode-opt.active { opacity: 1; color: var(--accent); font-weight: bold; }
+        .mode-tab { font-size: 12px; opacity: 0.4; letter-spacing: 1px; text-transform: uppercase; }
+        .mode-tab.active { opacity: 1; color: var(--accent); font-weight: bold; }
 
         .digits {
-            font-size: clamp(3.5rem, 15vw, 6.5rem);
-            font-weight: 700;
-            letter-spacing: -2px;
-            font-variant-numeric: tabular-nums;
-            text-shadow: 0 0 20px rgba(0,0,0,0.5);
+            font-size: clamp(3.5rem, 15vw, 6rem); font-weight: 800;
+            letter-spacing: -2px; font-variant-numeric: tabular-nums;
         }
 
-        .label-text {
-            position: absolute;
-            bottom: 20px;
-            font-size: 14px;
-            letter-spacing: 5px;
-            color: var(--accent);
-            text-transform: uppercase;
+        .status-label {
+            position: absolute; bottom: 20px; font-size: 14px;
+            letter-spacing: 5px; color: var(--accent); text-transform: uppercase;
         }
 
-        /* Bottom Left Box */
-        .date-time-container {
-            position: absolute;
-            bottom: 40px; left: 30px;
-            padding: 20px;
-            background: var(--glass);
-            border: 1px solid var(--border);
-            border-radius: 15px;
-            backdrop-filter: blur(5px);
-            text-align: left;
-        }
-
-        #clock { font-size: 32px; font-weight: bold; display: block; }
-        #date { font-size: 14px; opacity: 0.7; margin-top: 5px; display: block; }
-
-        /* Settings Modals */
-        .modal {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 10, 0, 0.85);
-            z-index: 100;
-            display: none;
-            justify-content: center; align-items: center;
+        /* 4. DATE/TIME BOX (Bottom Left) */
+        .info-box {
+            position: absolute; bottom: 40px; left: 30px;
+            padding: 20px; background: var(--glass);
+            border: 1px solid var(--border); border-radius: 15px;
             backdrop-filter: blur(5px);
         }
 
-        .modal-content {
-            background: #0a140a;
-            border: 1px solid var(--accent);
-            padding: 30px;
-            border-radius: 20px;
-            width: 85%; max-width: 380px;
-            box-shadow: 0 10px 40px rgba(0,0,0,1);
+        #live-clock { font-size: 32px; font-weight: bold; display: block; }
+        #live-date { font-size: 14px; opacity: 0.7; margin-top: 5px; display: block; }
+
+        /* 5. SETTINGS POPUP */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 10, 0, 0.9); z-index: 100;
+            display: none; justify-content: center; align-items: center;
         }
 
-        .modal-content h2 { margin: 0 0 20px 0; color: var(--accent); font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .popup {
+            background: #0a180a; border: 1px solid var(--accent);
+            padding: 30px; border-radius: 20px; width: 85%; max-width: 380px;
+        }
 
         .field { margin-bottom: 15px; }
-        .field label { display: block; font-size: 11px; opacity: 0.6; margin-bottom: 5px; letter-spacing: 1px; }
+        .field label { display: block; font-size: 11px; opacity: 0.6; margin-bottom: 5px; }
         .field input {
-            width: 100%; padding: 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border);
-            color: white; border-radius: 8px;
-            font-size: 16px;
+            width: 100%; padding: 12px; background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border); color: white; border-radius: 8px;
         }
 
-        .field input:focus { border-color: var(--accent); outline: none; }
+        .btn-start { width: 100%; padding: 15px; background: var(--accent); color: #002; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        .actions { display: flex; gap: 10px; margin-top: 25px; }
-        .actions button {
-            flex: 1; padding: 14px; border-radius: 8px; border: none;
-            font-weight: bold; cursor: pointer; text-transform: uppercase;
-            font-size: 12px; letter-spacing: 1px;
+        /* 6. DEBUG CONSOLE */
+        #debug-log {
+            position: fixed; bottom: 5px; right: 5px; font-size: 9px; color: #666;
         }
-        .btn-go { background: var(--accent); color: #002; }
-        .btn-off { background: transparent; color: white; border: 1px solid white; }
     </style>
 </head>
 <body>
@@ -185,79 +122,83 @@
     <video autoplay muted loop playsinline id="bg-video">
         <source src="endlessrain.mp4" type="video/mp4">
     </video>
-    <div class="overlay-dim"></div>
+    <div class="fallback-dim"></div>
 
-    <div class="app-container">
-        <div class="music-system">
-            <div class="music-btn" id="musicBtn" title="Select Music">🎵</div>
-            <div id="playPauseText">PAUSE</div>
-            <input type="file" id="musicInput" accept="audio/*" hidden>
-        </div>
-
-        <div class="main-door" id="mainDoor">
-            <div class="mode-selector">
-                <span class="mode-opt active" id="m-pomo">Pomodoro</span>
-                <span class="mode-opt" id="m-stop">Stopwatch</span>
-                <span class="mode-opt" id="m-time">Timer</span>
-            </div>
-            <div class="digits" id="timerOut">00:00:00</div>
-            <div class="label-text" id="statusLabel">READY</div>
-        </div>
-
-        <div class="date-time-container">
-            <span id="clock">00:00</span>
-            <span id="date">...</span>
-        </div>
+    <div class="music-wrapper">
+        <div class="music-btn" id="musicBtn">🎵</div>
+        <div id="music-status">PAUSE</div>
+        <input type="file" id="musicIn" accept="audio/*" hidden>
     </div>
 
-    <div class="modal" id="settingsMenu">
-        <div class="modal-content">
-            <h2 id="set-title">Pomodoro Settings</h2>
-            <div class="field" id="taskField">
-                <label>WORK TASK NAME (e.g. Study)</label>
+    <div class="main-door" id="mainDoor">
+        <div class="mode-tabs">
+            <span class="mode-tab active" id="tab-pomo">Pomodoro</span>
+            <span class="mode-tab" id="tab-stop">Stopwatch</span>
+            <span class="mode-tab" id="tab-time">Timer</span>
+        </div>
+        <div class="digits" id="timeDisplay">00:00:00</div>
+        <div class="status-label" id="statusLabel">READY</div>
+    </div>
+
+    <div class="info-box">
+        <span id="live-clock">00:00:00</span>
+        <span id="live-date">...</span>
+    </div>
+
+    <div class="overlay" id="pomoPanel">
+        <div class="popup">
+            <h2 style="color:var(--accent); margin-top:0;">SESSION SETUP</h2>
+            <div class="field">
+                <label>TASK NAME</label>
                 <input type="text" id="taskName" placeholder="STUDY">
             </div>
             <div class="field">
                 <label>WORK MINUTES</label>
-                <input type="number" id="workIn" value="65" min="1">
+                <input type="number" id="workMins" value="65">
             </div>
             <div class="field">
                 <label>BREAK MINUTES</label>
-                <input type="number" id="breakIn" value="10" min="1">
+                <input type="number" id="breakMins" value="10">
             </div>
-            <div class="field" id="cycleField">
-                <label>NUMBER OF CYCLES</label>
-                <input type="number" id="cycleIn" value="7" min="1">
+            <div class="field">
+                <label>TOTAL CYCLES</label>
+                <input type="number" id="cycleCount" value="7">
             </div>
-            <div class="actions">
-                <button class="btn-off" onclick="closeSettings()">CANCEL</button>
-                <button class="btn-go" onclick="startLogic()">START SESSION</button>
-            </div>
+            <button class="btn-start" onclick="startApp()">START SESSION</button>
+            <button class="btn-start" style="background:transparent; color:white; border:1px solid white; margin-top:5px;" onclick="closeSettings()">CANCEL</button>
         </div>
     </div>
 
+    <div id="debug-log">System: Ready</div>
+
     <script>
-        let ticker;
-        let timeLeft = 0;
-        let mode = 'pomo'; 
-        let active = false;
-        let onBreak = false;
-        let cyclesLeft = 0;
-        let task = "WORK";
+        const video = document.getElementById('bg-video');
+        const log = document.getElementById('debug-log');
+        
+        // --- VIDEO DEBUG ---
+        video.onerror = () => log.innerText = "Video Error: Check file name.";
+        window.addEventListener('click', () => {
+            video.play().catch(() => {});
+            log.innerText = "System: Active";
+        }, {once: true});
 
-        const audio = new Audio();
-        audio.loop = true;
-
-        // --- Clock and Date Engine ---
-        function clockUpdate() {
+        // --- CLOCK ---
+        function updateClock() {
             const d = new Date();
-            document.getElementById('clock').innerText = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit', hour12:false});
-            document.getElementById('date').innerText = d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
+            document.getElementById('live-clock').innerText = d.toLocaleTimeString([], {hour12:false});
+            document.getElementById('live-date').innerText = d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
         }
-        setInterval(clockUpdate, 1000);
-        clockUpdate();
+        setInterval(updateClock, 1000); updateClock();
 
-        // --- Formatting Helper ---
+        // --- TIMER LOGIC ---
+        let timer;
+        let seconds = 0;
+        let mode = 'pomo';
+        let running = false;
+        let isBreak = false;
+        let cycles = 0;
+        let task = "STUDY";
+
         function fmt(s) {
             const h = Math.floor(s/3600).toString().padStart(2,'0');
             const m = Math.floor((s%3600)/60).toString().padStart(2,'0');
@@ -265,304 +206,105 @@
             return `${h}:${m}:${sc}`;
         }
 
-        // --- Mode Switching ---
-        document.querySelectorAll('.mode-opt').forEach(opt => {
-            opt.onclick = (e) => {
+        // --- MODE SWITCHING ---
+        document.querySelectorAll('.mode-tab').forEach(tab => {
+            tab.onclick = (e) => {
                 e.stopPropagation();
-                stopTimer();
-                document.querySelectorAll('.mode-opt').forEach(x => x.classList.remove('active'));
-                opt.classList.add('active');
-                if(opt.id === 'm-pomo') mode = 'pomo';
-                if(opt.id === 'm-stop') mode = 'stop';
-                if(opt.id === 'm-time') mode = 'time';
-                timeLeft = 0;
-                document.getElementById('timerOut').innerText = "00:00:00";
-            }
+                clearInterval(timer); running = false;
+                document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                mode = tab.id.replace('tab-', '');
+                seconds = 0;
+                document.getElementById('timeDisplay').innerText = "00:00:00";
+                document.getElementById('statusLabel').innerText = "READY";
+            };
         });
 
-        // --- Interaction Logic ---
+        // --- INTERACTION ---
         document.getElementById('mainDoor').onclick = () => {
-            if(!active && (mode === 'pomo' || mode === 'time')) {
-                openSettings();
+            if(!running && seconds === 0 && (mode === 'pomo' || mode === 'time')) {
+                document.getElementById('pomoPanel').style.display = 'flex';
             } else {
-                toggleTimer();
+                toggle();
             }
         };
 
-        function openSettings() {
-            document.getElementById('settingsMenu').style.display = 'flex';
-            document.getElementById('taskField').style.display = mode === 'pomo' ? 'block' : 'none';
-            document.getElementById('cycleField').style.display = mode === 'pomo' ? 'block' : 'none';
-            document.getElementById('set-title').innerText = mode === 'pomo' ? "Pomodoro Setup" : "Timer Setup";
-        }
+        function closeSettings() { document.getElementById('pomoPanel').style.display = 'none'; }
 
-        function closeSettings() { document.getElementById('settingsMenu').style.display = 'none'; }
-
-        function startLogic() {
+        function startApp() {
             task = document.getElementById('taskName').value.toUpperCase() || "STUDY";
-            timeLeft = document.getElementById('workIn').value * 60;
-            cyclesLeft = document.getElementById('cycleIn').value;
-            onBreak = false;
+            seconds = document.getElementById('workMins').value * 60;
+            cycles = document.getElementById('cycleCount').value;
+            isBreak = false;
             closeSettings();
-            document.getElementById('timerOut').innerText = fmt(timeLeft);
-            toggleTimer();
+            document.getElementById('timeDisplay').innerText = fmt(seconds);
+            toggle();
         }
 
-        function toggleTimer() {
-            if(active) {
-                clearInterval(ticker);
+        function toggle() {
+            if(running) {
+                clearInterval(timer);
                 document.getElementById('statusLabel').innerText = "PAUSED";
             } else {
-                ticker = setInterval(doTick, 1000);
-                updateLabel();
+                timer = setInterval(tick, 1000);
+                updateUI();
             }
-            active = !active;
+            running = !running;
         }
 
-        function stopTimer() {
-            clearInterval(ticker);
-            active = false;
-            document.getElementById('statusLabel').innerText = "READY";
-        }
-
-        function doTick() {
+        function tick() {
             if(mode === 'stop') {
-                timeLeft++;
+                seconds++;
             } else {
-                if(timeLeft <= 0) {
-                    handleFinish();
-                } else {
-                    timeLeft--;
-                }
-            }
-            document.getElementById('timerOut').innerText = fmt(timeLeft);
-        }
-
-        function handleFinish() {
-            if(mode === 'pomo') {
-                if(!onBreak) {
-                    onBreak = true;
-                    timeLeft = document.getElementById('breakIn').value * 60;
-                } else {
-                    cyclesLeft--;
-                    if(cyclesLeft > 0) {
-                        onBreak = false;
-                        timeLeft = document.getElementById('workIn').value * 60;
+                if(seconds <= 0) {
+                    if(mode === 'pomo') {
+                        if(!isBreak) {
+                            isBreak = true;
+                            seconds = document.getElementById('breakMins').value * 60;
+                        } else {
+                            cycles--;
+                            if(cycles > 0) {
+                                isBreak = false;
+                                seconds = document.getElementById('workMins').value * 60;
+                            } else {
+                                clearInterval(timer); running = false; alert("All cycles done!"); return;
+                            }
+                        }
+                        updateUI();
                     } else {
-                        stopTimer();
-                        alert("Session Complete!");
-                        return;
+                        clearInterval(timer); running = false; alert("Time's up!"); return;
                     }
+                } else {
+                    seconds--;
                 }
-                updateLabel();
-            } else {
-                stopTimer();
-                alert("Time is up!");
             }
+            document.getElementById('timeDisplay').innerText = fmt(seconds);
         }
 
-        function updateLabel() {
+        function updateUI() {
             const lbl = document.getElementById('statusLabel');
             if(mode === 'stop') lbl.innerText = "STOPWATCH";
             else if(mode === 'time') lbl.innerText = "TIMER";
-            else lbl.innerText = onBreak ? "BREAK" : task;
+            else lbl.innerText = isBreak ? "BREAK" : task;
         }
 
-        // --- Music Engine ---
-        const mBtn = document.getElementById('musicBtn');
-        const mIn = document.getElementById('musicInput');
-        const pBtn = document.getElementById('playPauseText');
-
-        mBtn.onclick = () => mIn.click();
-        mIn.onchange = (e) => {
-            const file = e.target.files[0];
-            if(file) {
-                if(audio.src) URL.revokeObjectURL(audio.src); // Cleanup memory
-                audio.src = URL.createObjectURL(file);
-                audio.loop = true;
+        // --- MUSIC ENGINE ---
+        const audio = new Audio(); audio.loop = true;
+        document.getElementById('musicBtn').onclick = () => document.getElementById('musicIn').click();
+        document.getElementById('musicIn').onchange = (e) => {
+            const f = e.target.files[0];
+            if(f) {
+                audio.src = URL.createObjectURL(f);
                 audio.play();
-                pBtn.style.display = 'block';
-                pBtn.innerText = "PAUSE";
+                document.getElementById('music-status').style.display = 'block';
+                document.getElementById('music-status').innerText = "PAUSE";
             }
         };
-
-        pBtn.onclick = (e) => {
+        document.getElementById('music-status').onclick = (e) => {
             e.stopPropagation();
-            if(audio.paused) { audio.play(); pBtn.innerText = "PAUSE"; }
-            else { audio.pause(); pBtn.innerText = "PLAY"; }
+            if(audio.paused) { audio.play(); e.target.innerText = "PAUSE"; }
+            else { audio.pause(); e.target.innerText = "PLAY"; }
         };
-    /// --- FAIL-SAFE: Force Background Video to Start ---
-const bgVideo = document.getElementById('bg-video');
-
-// This function forces the video to play if the browser blocked it
-function forceStartVideo() {
-    bgVideo.play().then(() => {
-        console.log("Video background started successfully!");
-    }).catch(err => {
-        console.log("Video still blocked. It will start on your first click.");
-    });
-}
-
-// Start video on first interaction (needed for many mobile apps)
-window.addEventListener('click', () => {
-    forceStartVideo();
-}, { once: true });
-
-// --- Core App Variables ---
-let ticker;
-let timeLeft = 0;
-let mode = 'pomo'; 
-let active = false;
-let onBreak = false;
-let cyclesLeft = 0;
-let task = "STUDY";
-
-const audio = new Audio();
-audio.loop = true;
-
-// --- Clock and Date Engine ---
-function clockUpdate() {
-    const d = new Date();
-    document.getElementById('clock').innerText = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit', hour12:false});
-    document.getElementById('date').innerText = d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
-}
-setInterval(clockUpdate, 1000);
-clockUpdate();
-
-// --- Formatting Helper ---
-function fmt(s) {
-    const h = Math.floor(s/3600).toString().padStart(2,'0');
-    const m = Math.floor((s%3600)/60).toString().padStart(2,'0');
-    const sc = (s%60).toString().padStart(2,'0');
-    return `${h}:${m}:${sc}`;
-}
-
-// --- Mode Switching ---
-document.querySelectorAll('.mode-opt').forEach(opt => {
-    opt.onclick = (e) => {
-        e.stopPropagation();
-        stopTimer();
-        document.querySelectorAll('.mode-opt').forEach(x => x.classList.remove('active'));
-        opt.classList.add('active');
-        if(opt.id === 'm-pomo') mode = 'pomo';
-        if(opt.id === 'm-stop') mode = 'stop';
-        if(opt.id === 'm-time') mode = 'time';
-        timeLeft = 0;
-        document.getElementById('timerOut').innerText = "00:00:00";
-    }
-});
-
-// --- Interaction Logic ---
-document.getElementById('mainDoor').onclick = () => {
-    if(!active && (mode === 'pomo' || mode === 'time') && timeLeft === 0) {
-        openSettings();
-    } else {
-        toggleTimer();
-    }
-};
-
-function openSettings() {
-    document.getElementById('settingsMenu').style.display = 'flex';
-    document.getElementById('taskField').style.display = mode === 'pomo' ? 'block' : 'none';
-    document.getElementById('cycleField').style.display = mode === 'pomo' ? 'block' : 'none';
-    document.getElementById('set-title').innerText = mode === 'pomo' ? "Pomodoro Setup" : "Timer Setup";
-}
-
-function closeSettings() { document.getElementById('settingsMenu').style.display = 'none'; }
-
-function startLogic() {
-    task = document.getElementById('taskName').value.toUpperCase() || "STUDY";
-    timeLeft = document.getElementById('workIn').value * 60;
-    cyclesLeft = document.getElementById('cycleIn').value;
-    onBreak = false;
-    closeSettings();
-    document.getElementById('timerOut').innerText = fmt(timeLeft);
-    toggleTimer();
-}
-
-function toggleTimer() {
-    if(active) {
-        clearInterval(ticker);
-        document.getElementById('statusLabel').innerText = "PAUSED";
-    } else {
-        ticker = setInterval(doTick, 1000);
-        updateLabel();
-    }
-    active = !active;
-}
-
-function stopTimer() {
-    clearInterval(ticker);
-    active = false;
-    document.getElementById('statusLabel').innerText = "READY";
-}
-
-function doTick() {
-    if(mode === 'stop') {
-        timeLeft++;
-    } else {
-        if(timeLeft <= 0) {
-            handleFinish();
-        } else {
-            timeLeft--;
-        }
-    }
-    document.getElementById('timerOut').innerText = fmt(timeLeft);
-}
-
-function handleFinish() {
-    if(mode === 'pomo') {
-        if(!onBreak) {
-            onBreak = true;
-            timeLeft = document.getElementById('breakIn').value * 60;
-        } else {
-            cyclesLeft--;
-            if(cyclesLeft > 0) {
-                onBreak = false;
-                timeLeft = document.getElementById('workIn').value * 60;
-            } else {
-                stopTimer();
-                alert("Session Complete!");
-                return;
-            }
-        }
-        updateLabel();
-    } else {
-        stopTimer();
-        alert("Time is up!");
-    }
-}
-
-function updateLabel() {
-    const lbl = document.getElementById('statusLabel');
-    if(mode === 'stop') lbl.innerText = "STOPWATCH";
-    else if(mode === 'time') lbl.innerText = "TIMER";
-    else lbl.innerText = onBreak ? "BREAK" : task;
-}
-
-// --- Music Engine ---
-const mBtn = document.getElementById('musicBtn');
-const mIn = document.getElementById('musicInput');
-const pBtn = document.getElementById('playPauseText');
-
-mBtn.onclick = () => mIn.click();
-mIn.onchange = (e) => {
-    const file = e.target.files[0];
-    if(file) {
-        if(audio.src) URL.revokeObjectURL(audio.src);
-        audio.src = URL.createObjectURL(file);
-        audio.loop = true;
-        audio.play();
-        pBtn.style.display = 'block';
-        pBtn.innerText = "PAUSE";
-    }
-};
-
-pBtn.onclick = (e) => {
-    e.stopPropagation();
-    if(audio.paused) { audio.play(); pBtn.innerText = "PAUSE"; }
-    else { audio.pause(); pBtn.innerText = "PLAY"; }
-};
-
+    </script>
 </body>
 </html>
