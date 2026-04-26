@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rainy Clover Timer</title>
+    <style>
+        :root {
+            --glass-bg: rgba(0, 20, 0, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --accent-green: #a8e6cf;
+            --text-glow: 0 0 10px rgba(168, 230, 207, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            background-color: #051005;
+        }
+
+        /* Background GIF */
+        .background-env {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('endlessrain.gif') no-repeat center center;
+            background-size: cover;
+            z-index: -2;
+        }
+
+        /* Main UI Container */
+        .app-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        /* Music Icon (Top Circle) */
+        .music-wrapper {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .music-btn {
+            width: 60px;
+            height: 60px;
+            background: var(--glass-bg);
+            border: 2px solid var(--accent-green);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 24px;
+            transition: transform 0.2s;
+            box-shadow: var(--text-glow);
+        }
+
+        .music-btn:active { transform: scale(0.9); }
+
+        .music-controls {
+            margin-top: 10px;
+            display: none;
+            background: var(--glass-bg);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        /* The Main Door (Top Large Rectangle) */
+        .main-door {
+            margin: 20px auto 0;
+            width: 90%;
+            max-width: 800px;
+            height: 280px;
+            background: var(--glass-bg);
+            border: 2px solid var(--accent-green);
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .mode-switcher {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .mode-item {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.5;
+            transition: 0.3s;
+        }
+
+        .mode-item.active { opacity: 1; color: var(--accent-green); font-weight: bold; }
+
+        .display-digits {
+            font-size: clamp(4rem, 15vw, 7rem);
+            font-weight: 800;
+            text-shadow: var(--text-glow);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .phase-label {
+            position: absolute;
+            bottom: 20px;
+            font-size: 18px;
+            letter-spacing: 4px;
+            color: var(--accent-green);
+            text-transform: uppercase;
+        }
+
+        /* Bottom Left Date/Time */
+        .date-time-box {
+            position: absolute;
+            bottom: 40px;
+            left: 30px;
+            padding: 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            min-width: 180px;
+            backdrop-filter: blur(4px);
+        }
+
+        #clock-time { font-size: 32px; font-weight: bold; display: block; }
+        #date-str { font-size: 16px; opacity: 0.8; }
+
+        /* Popups / "Behind the Door" Settings */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 15, 0, 0.85);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .popup {
+            background: #0a1a0a;
+            border: 2px solid var(--accent-green);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            transform: translateY(20px);
+        }
+
+        .popup h2 { margin-top: 0; color: var(--accent-green); }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; font-size: 14px; opacity: 0.8; }
+        
+        .popup input {
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            padding: 12px;
+            color: white;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .popup input:focus { border-color: var(--accent-green); }
+
+        .popup-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-confirm { background: var(--accent-green); color: #051005; }
+        .btn-cancel { background: transparent; color: white; border: 1px solid white; }
+    </style>
+</head>
+<body>
+
+    <div class="background-env"></div>
+
+    <div class="app-container">
+        <div class="music-wrapper">
+            <div class="music-btn" id="musicBtn" title="Select Music">🎵</div>
+            <div class="music-controls" id="musicUI">
+                <span id="playPauseBtn" style="cursor:pointer">PLAY</span>
+            </div>
+            <input type="file" id="audioLoader" accept="audio/*" hidden>
+        </div>
+
+        <div class="main-door" id="mainDoor">
+            <div class="mode-switcher">
+                <div class="mode-item active" id="mode-pomo">Pomodoro</div>
+                <div class="mode-item" id="mode-stop">Stopwatch</div>
+                <div class="mode-item" id="mode-timer">Timer</div>
+            </div>
+            
+            <div class="display-digits" id="timerDisplay">00:00:00</div>
+            <div class="phase-label" id="phaseDisplay">READY</div>
+        </div>
+
+        <div class="date-time-box">
+            <span id="clock-time">00:00:00</span>
+            <span id="date-str">Loading...</span>
+        </div>
+    </div>
+
+    <div class="overlay" id="pomoSettings">
+        <div class="popup">
+            <h2>Pomodoro Setup</h2>
+            <div class="input-group">
+                <label>Task Name</label>
+                <input type="text" id="taskInput" placeholder="e.g. Study, Recall, Focus">
+            </div>
+            <div class="input-group">
+                <label>Work Duration (mins)</label>
+                <input type="number" id="workInput" value="65">
+            </div>
+            <div class="input-group">
+                <label>Break Duration (mins)</label>
+                <input type="number" id="breakInput" value="10">
+            </div>
+            <div class="input-group">
+                <label>Number of Cycles</label>
+                <input type="number" id="cycleInput" value="7">
+            </div>
+            <div class="popup-btns">
+                <button class="btn-cancel" onclick="closeSettings()">CANCEL</button>
+                <button class="btn-confirm" onclick="startPomodoro()">START</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Core Variables
+        let timerInterval;
+        let totalSeconds = 0;
+        let currentMode = 'pomodoro'; // 'pomodoro', 'stopwatch', 'timer'
+        let isRunning = false;
+        let isBreakPhase = false;
+        let cyclesRemaining = 0;
+        let taskName = "STUDY";
+
+        // Audio Objects
+        const audio = new Audio();
+        audio.loop = true;
+
+        // Elements
+        const timerDisplay = document.getElementById('timerDisplay');
+        const phaseDisplay = document.getElementById('phaseDisplay');
+        const mainDoor = document.getElementById('mainDoor');
+        const clockTime = document.getElementById('clock-time');
+        const dateStr = document.getElementById('date-str');
+
+        // --- CLOCK LOGIC ---
+        function updateClock() {
+            const now = new Date();
+            clockTime.innerText = now.toLocaleTimeString([], { hour12: false });
+            dateStr.innerText = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- TIMER CORE LOGIC ---
+        function formatTime(s) {
+            const hrs = Math.floor(s / 3600).toString().padStart(2, '0');
+            const mins = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+            const secs = (s % 60).toString().padStart(2, '0');
+            return `${hrs}:${mins}:${secs}`;
+        }
+
+        function runTimer() {
+            if (currentMode === 'stopwatch') {
+                totalSeconds++;
+            } else {
+                if (totalSeconds <= 0) {
+                    handlePhaseChange();
+                } else {
+                    totalSeconds--;
+                }
+            }
+            timerDisplay.innerText = formatTime(totalSeconds);
+        }
+
+        function handlePhaseChange() {
+            if (currentMode === 'pomodoro') {
+                if (!isBreakPhase) {
+                    // Switch to Break
+                    isBreakPhase = true;
+                    totalSeconds = document.getElementById('breakInput').value * 60;
+                    phaseDisplay.innerText = "BREAK";
+                } else {
+                    // Switch to Work
+                    cyclesRemaining--;
+                    if (cyclesRemaining > 0) {
+                        isBreakPhase = false;
+                        totalSeconds = document.getElementById('workInput').value * 60;
+                        phaseDisplay.innerText = taskName.toUpperCase();
+                    } else {
+                        stopAll();
+                        phaseDisplay.innerText = "COMPLETE";
+                        alert("Session Finished!");
+                    }
+                }
+            } else if (currentMode === 'timer') {
+                stopAll();
+                alert("Time's up!");
+            }
+        }
+
+        function stopAll() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            phaseDisplay.innerText = "READY";
+        }
+
+        // --- UI INTERACTIONS ---
+        mainDoor.addEventListener('click', (e) => {
+            // Check if clicking specific mode buttons
+            if (e.target.classList.contains('mode-item')) {
+                switchMode(e.target.id);
+                return;
+            }
+
+            if (currentMode === 'pomodoro' && !isRunning && totalSeconds === 0) {
+                document.getElementById('pomoSettings').style.display = 'flex';
+            } else {
+                toggleTimerState();
+            }
+        });
+
+        function switchMode(id) {
+            stopAll();
+            document.querySelectorAll('.mode-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            
+            if (id === 'mode-pomo') currentMode = 'pomodoro';
+            if (id === 'mode-stop') currentMode = 'stopwatch';
+            if (id === 'mode-timer') currentMode = 'timer';
+            
+            totalSeconds = 0;
+            timerDisplay.innerText = "00:00:00";
+        }
+
+        function toggleTimerState() {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                phaseDisplay.innerText = "PAUSED";
+            } else {
+                timerInterval = setInterval(runTimer, 1000);
+                phaseDisplay.innerText = isBreakPhase ? "BREAK" : taskName.toUpperCase();
+            }
+            isRunning = !isRunning;
+        }
+
+        // --- POMODORO SETTINGS ---
+        function closeSettings() {
+            document.getElementById('pomoSettings').style.display = 'none';
+        }
+
+        function startPomodoro() {
+            taskName = document.getElementById('taskInput').value || "STUDY";
+            totalSeconds = document.getElementById('workInput').value * 60;
+            cyclesRemaining = document.getElementById('cycleInput').value;
+            isBreakPhase = false;
+            
+            closeSettings();
+            timerDisplay.innerText = formatTime(totalSeconds);
+            toggleTimerState();
+        }
+
+        // --- MUSIC LOGIC ---
+        const musicBtn = document.getElementById('musicBtn');
+        const audioLoader = document.getElementById('audioLoader');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const musicUI = document.getElementById('musicUI');
+
+        musicBtn.onclick = () => audioLoader.click();
+
+        audioLoader.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                audio.src = url;
+                audio.play();
+                musicUI.style.display = 'block';
+                playPauseBtn.innerText = "PAUSE";
+            }
+        };
+
+        playPauseBtn.onclick = () => {
+            if (audio.paused) {
+                audio.play();
+                playPauseBtn.innerText = "PAUSE";
+            } else {
+                audio.pause();
+                playPauseBtn.innerText = "PLAY";
+            }
+        };
+    </script>
+</body>
+</html>
